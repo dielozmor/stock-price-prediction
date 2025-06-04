@@ -1,0 +1,33 @@
+Stock Price Trend Prediction Scope
+
+Project Goal:
+- Predict the next-day closing price of Tesla stock (TSLA) using a linear regression model.
+
+Data Source:
+- Alpha Vantage API (free tier, daily stock data).
+- Time frame: 1 year of daily data (January 1, 2024 -  December 31, 2024).
+
+Features:
+- Previous day's closing price.
+- Daily trading volume.
+- 5-day moving average of closing price.
+
+Model:
+- Linear regression to predict the next day's closing price based on selected features.
+
+Deliverables:
+- Python scripts for data retrieval, processing, and model training.
+- Trained linear regression model saved in /models folder.
+- Evaluation report with metrics (e.g., mean squared error) and visualizations (e.g., predicted vs. actual prices).
+- Github repository (stock-price-prediction) with organized code, data, and documentation.
+
+DevOps requirements:
+- Automated script to pull daily data from Alpha Vantage API.
+- Automated data cleaning pipeline to prepare data for the model.
+- Github repository for version control, with folders: /data, /scripts, /models, /docs.
+- Scheduled updates (e.g., weekly) to fetch new data and retrain model.
+
+Success Criteria:
+- Model achieves reasonable accuracy (e.g., low mean squared error on test data).
+- Pipeline line runs without errors, with data and model outputs saved correctly.
+- GitHub repo is well-documented with a README and clear code structure.
