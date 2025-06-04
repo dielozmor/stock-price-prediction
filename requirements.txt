@@ -1,0 +1,14 @@
+# Core dependencies for Stock Price Trend Prediction Project
+requests>=2.31.0		# For Alpha Vantage API calls
+pandas>=2.2.2			# Data processing and CSV handling
+numpy>=1.26.4			# Numerical operations
+scikit-learn>=1.4.2		# Linear regression and MSE actual prices
+matplotlib>=3.8.4		# Plotting predicted vs. actual prices
+jupyter>=1.0.0			# Jupyter nootebooks for development
+ipykernel>=6.29.4		# Python kernel for jupyter
+
+# Optional dependencies
+# python-dotenv>=1.0.1		# Secure API key storage (if using .env)
+# seaborn>=0.13.2		# Enhanced visualizations
+# scipy>=1.13.0			# Advanced statistical operations
+# joblib>=1.4.2			# Model persistence
