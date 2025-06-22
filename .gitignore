@@ -196,3 +196,7 @@ cython_debug/
 # Project specific files
 data/processed/*.csv
 docs/*.pdf
+
+# Temporary files or folders
+personal/
+data/reference
