@@ -1,11 +1,12 @@
 Stock Price Trend Prediction Scope
+Last Updated: June 22, 2025, 02:25 PM IST
 
 Project Goal:
-- Predict the next-day closing price of Tesla stock (TSLA) using a linear regression model.
+- Develop a dynamic system to predict the next-day closing price of any stock using a linear regression model, with Tesla (TSLA) as the initially selected stock.
 
 Data Source:
-- Alpha Vantage API (free tier, daily stock data).
-- Time frame: 1 year of daily data (January 1, 2024 -  December 31, 2024).
+- Alpha Vantage API (free tier, daily stock data for the selected stock).
+- Time frame: 1 year of daily data (January 1, 2024 - December 31, 2024) for the initially selected stock, TSLA.
 
 Features:
 - Previous day's closing price.
@@ -16,18 +17,20 @@ Model:
 - Linear regression to predict the next day's closing price based on selected features.
 
 Deliverables:
-- Python scripts for data retrieval, processing, and model training.
-- Trained linear regression model saved in /models folder.
-- Evaluation report with metrics (e.g., mean squared error) and visualizations (e.g., predicted vs. actual prices).
-- Github repository (stock-price-prediction) with organized code, data, and documentation.
+- Python scripts for data retrieval, processing, and model training, supporting dynamic stock selection.
+- Trained linear regression model saved in /models folder, named dynamically (e.g., /models/<stock>_linear_regression.joblib).
+- Evaluation report with metrics (e.g., mean squared error) and visualizations (e.g., predicted vs. actual prices) for the selected stock.
+- GitHub repository (stock-price-prediction) with organized code, data, and documentation.
 
-DevOps requirements:
-- Automated script to pull daily data from Alpha Vantage API.
+DevOps Requirements:
+- Automated script to pull daily data from Alpha Vantage API for the selected stock.
 - Automated data cleaning pipeline to prepare data for the model.
-- Github repository for version control, with folders: /data, /scripts, /models, /docs.
-- Scheduled updates (e.g., weekly) to fetch new data and retrain model.
+- GitHub repository for version control, with folders: /data, /scripts, /models, /docs.
+- Scheduled updates (e.g., weekly) to fetch new data and retrain the model for the selected stock.
 
 Success Criteria:
-- Model achieves reasonable accuracy (e.g., low mean squared error on test data).
-- Pipeline line runs without errors, with data and model outputs saved correctly.
+- Model achieves reasonable accuracy (e.g., low mean squared error on test data) for the selected stock.
+- Pipeline runs without errors, with data and model outputs saved correctly for the selected stock.
 - GitHub repo is well-documented with a README and clear code structure.
+
+Note: The system is designed for dynamic stock selection, with TSLA as the initial stock. Users can switch to other stocks by updating the configuration or input parameters.
