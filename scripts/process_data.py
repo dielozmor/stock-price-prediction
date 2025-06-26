@@ -149,9 +149,9 @@ def flag_outliers(df, config):
 
 def engineer_features(df, config):
     """Add engineer features to the DataFrame."""
-    df['prev_close'] = df['close'].shift(1)
+    df['prev_close'] = df['close'].shift(1).fillna(df['close'])
     df['ma5'] = df['close'].rolling(window=5, min_periods=1).mean()
-    df['next_close'] = df['close'].shift(-1)
+    df['next_close'] = df['close'].shift(-1).fillna(df['close'])
     logger.info("Added features: prev_close, ma5, next_close")
     return df
 
