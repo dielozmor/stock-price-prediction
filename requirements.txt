@@ -13,3 +13,4 @@ ipykernel==6.29.5
 jupyterlab==4.4.0
 notebook==7.4.3
 ipython==8.37.0
+joblib==1.5.1
