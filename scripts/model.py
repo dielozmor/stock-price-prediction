@@ -5,6 +5,7 @@ import logging
 import os
 import argparse
 from datetime import datetime
+import matplotlib.pyplot as plt
 
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
@@ -146,6 +147,9 @@ def evaluate_model(model, X_test, Y_test, stock_symbol, timestamp):
         with open(metrics_path, 'w') as f:
             f.write(f"RMSE: {rmse:.2f}\nMAE: {mae:.2f}\nR2: {r2:.2f}\n")
         logger.info(f"Model evaluation for {stock_symbol}: RMSE={rmse:.2f}, MAE={mae:.2f}, R2={r2:.2f}")
+
+        plot_predictions(Y_test, Y_pred, stock_symbol, timestamp)
+
         return metrics
     except Exception as e:
         logger.error(f"Error evaluating model: {e}")
@@ -157,17 +161,43 @@ def test_outliers_sensitivity(df, X, Y, stock_symbol, metrics, timestamp):
         if 'is_outlier' not in df.columns:
             logger.warning("No 'is_outlier' column found. Skipping outlier sensitivity test.")
             return None
+        
+        # Filter out outliers
         df_no_outliers = df[df['is_outlier'] == False]
         X_no_outliers, Y_no_outliers = select_features(df_no_outliers)
         X_train_no, X_test_no, Y_train_no, Y_test_no = split_data(X_no_outliers, Y_no_outliers)
+        
+        # Train and evaluate the model
         model_no_outliers = train_model(X_train_no, Y_train_no, f"{stock_symbol}_no_outliers", timestamp)
         metrics_no_outliers = evaluate_model(model_no_outliers, X_test_no, Y_test_no, f"{stock_symbol}_no_outliers", timestamp)
         logger.info(f"Outlier-free model metrics for {stock_symbol}: {metrics_no_outliers}")
         logger.info(f"Comparison: With outliers RMSE={metrics['RMSE']:.2f}, Without outliers RMSE={metrics_no_outliers['RMSE']:.2f}")
+
+        # Visualize predictions
+        Y_pred_no = model_no_outliers.predict(X_test_no)
+        plot_predictions(Y_test_no, Y_pred_no, f"{stock_symbol}_no_outliers", timestamp)
+
         return metrics_no_outliers
     except Exception as e:
         logger.error(f"Error testing outlier sensitivity: {e}")
         raise
+
+def plot_predictions(Y_test, Y_pred, stock_symbol, timestamp):
+    """Plot actual vs. predicted nex_close and save to file."""
+    try:
+        plt.figure(figsize=(10, 6))
+        plt.plot(Y_test.index, Y_test, label='Actual next_close', color='blue')
+        plt.plot(Y_test.index, Y_pred, label='Predicted next_close', color='red', linestyle='--')
+        plt.xlabel('Date')
+        plt.ylabel('Next Close Price')
+        plt.title(f'Actual vs. Predicted Next close price for {stock_symbol}')
+        plt.legend()
+        plot_path = f"docs/images/test_predictions_{stock_symbol.lower()}_{timestamp}.png"
+        plt.savefig(plot_path)
+        plt.close()
+        logger.info(f"Saved prediction plot to {plot_path}")
+    except Exception as e:
+        logger.error(f"Saved prediction plot to {plot_path}")
 
 def main():
     """Orchestrate the modeling pipeline."""
@@ -188,4 +218,5 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     os.makedirs('models', exist_ok=True)
     os.makedirs('docs', exist_ok=True)
+    os.makedirs('docs/images', exist_ok=True)
     main()
