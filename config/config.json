@@ -1,0 +1,33 @@
+{
+    "current_fetch": {
+        "fetch_id": "fetch_20250617_093553",
+        "stock_symbol": "TSLA",
+        "fetch_time": "2025-06-17 09:35:53",
+        "raw_data_file": "data/raw/raw_tsla_fetch_20250617_093553.csv",
+        "data_start_date": "2024-06-17",
+        "data_end_date": "2025-06-16",
+        "api_function": "TIME_SERIES_DAILY",
+        "days_back": 365,
+        "outputsize": "full",
+        "interval": null,
+        "row_count": 250,
+        "cleaned_data_file": "data/processed/cleaned_tsla_fetch_20250617_093553.csv",
+        "processed_data_file": "data/processed/processed_tsla_fetch_20250617_093553.csv"
+    },
+    "current_models": {
+        "with_outliers": "model_tsla_20250730_102338_with_outliers",
+        "without_outliers": "model_tsla_20250730_102338_without_outliers"
+    },
+    "fetch_id": "initial_setup",
+    "project_root": "/home/dielozmor/dev/projects/portfolio/stock-price-prediction",
+    "utils_dir": "utils",
+    "log_dir": "logs",
+    "plots_dir": "plots",
+    "models_dir": "models",
+    "raw_data_dir": "data/raw",
+    "processed_data_dir": "data/processed",
+    "gaps_dir": "data/intermediate",
+    "outliers_dir": "data/outliers",
+    "docs_data_eval_dir": "docs/data_evaluation",
+    "docs_model_eval_dir": "docs/model_evaluation"
+}

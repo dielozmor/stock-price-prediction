@@ -194,8 +194,8 @@ cython_debug/
 .cursorindexingignore
 
 # Project specific files
-data/processed/*.csv
 docs/*.pdf
+logs/
 
 # Temporary files or folders
 personal/
