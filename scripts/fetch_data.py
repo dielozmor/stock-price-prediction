@@ -1,127 +1,199 @@
 #!/usr/bin/env python3
 """
-Fetch daily stock data from the Alpha Vantage API and save it to a CSV file.
+Fetch stock data from the Alpha Vantage API and save it to a CSV file.
 
-This script retrieves daily stock data for a specified ticker symbol, stores it as a CSV file,
-and saves a configuration file with the ticker and fetch timestamp. The ticker can be provided
-via command-line arguments or an environment variable.
-
-Attributes:
-    parser: Command-line argument parser for the stock ticker.
-    API_KEY: Alpha Vantage API key loaded from environment variables.
-    stock_symbol: Stock ticker symbol (e.g., 'TSLA', 'AAPL').
-
-Example:
-    $ ./fetch_data.py TSLA
-    $ ./fetch_data.py --symbol AAPL
+This script retrieves stock data based on the specified API function (e.g., daily, weekly, intraday),
+saves it as a CSV, and manages configurations:
+- config.json: Stores the configuration for the most recent fetch under 'current_fetch'.
+- fetch_history.jsonl: Appends each fetch's full configuration for historical tracking.
 """
 
 import requests
 import pandas as pd
 from dotenv import load_dotenv
 import os
-import argparse
-import json
+from typing import Optional
+from spp.logging_utils import setup_logging
+from spp.data_utils import parse_arguments, update_config, load_config
 
-# Set up command-line argument parser  ->  accepts the symbol as command-line argument when running fetch_data.py
-parser = argparse.ArgumentParser(description="Fetch daily stock data from Alpha Vantage API.")
-parser.add_argument("symbol", type=str, help="Stock ticker (e.g., TSLA, AAPL)", nargs="?")  # ?: Allows exe without arg
-args = parser.parse_args()
+# Define project root directory
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
-# Load environmental variables from .env file
-load_dotenv()
+# Initialize logger
+logger = setup_logging(logger_name="fetch_data", log_dir="logs")
 
-# Get API key from .env
-API_KEY = os.getenv("ALPHA_VANTAGE_API_KEY")
-if not API_KEY:
-    raise ValueError("API key not found in .env file")
+def fetch_stock_data(
+    stock_symbol: str,
+    api_key: str,
+    fetch_id: str,
+    api_function: str = "TIME_SERIES_DAILY",
+    days_back: int = 365,
+    outputsize: str = "full",
+    interval: Optional[str] = None
+) -> pd.DataFrame:
+    """Fetch stock data from Alpha Vantage API with a dynamic time series key."""
+    if api_function == "TIME_SERIES_INTRADAY" and interval is None:
+        raise ValueError("Interval is required for TIME_SERIES_INTRADAY")
 
-# Get stock symbol from .env
-stock_symbol = args.symbol or os.getenv("STOCK_SYMBOL", "TSLA")
-if not stock_symbol:
-    raise ValueError("No stock symbol provided via command-line or .env")
+    # Determine the time series key Fbased on api_function
+    if api_function == "TIME_SERIES_DAILY":
+        time_series_key = "Time Series (Daily)"
+    elif api_function == "TIME_SERIES_WEEKLY":
+        time_series_key = "Weekly Time Series"
+    elif api_function == "TIME_SERIES_MONTHLY":
+        time_series_key = "Monthly Time Series"
+    elif api_function == "TIME_SERIES_INTRADAY":
+        time_series_key = f"Time Series ({interval})"
+    else:
+        raise ValueError(f"Unsupported API function: {api_function}")
 
-def fetch_data(symbol, outputsize="full"):
-    """
-    Fetch daily stock data for a given symbol from the Alpha Vantage API.
+    # Construct the API URL
+    url = f"https://www.alphavantage.co/query?function={api_function}&symbol={stock_symbol}"
+    if api_function == "TIME_SERIES_INTRADAY":
+        url += f"&interval={interval}"
+    url += f"&outputsize={outputsize}&apikey={api_key}"
 
-    Sends a request to the Alpha Vantage API, converts the response to a pandas DataFrame, and
-    filters it to include only the last year of data.
-
-    Parameters:
-        symbol (str): Stock ticker symbol (e.g., 'TSLA', 'AAPL').
-        outputsize (str): Amount of data to retrieve ('full' for full history, 'compact' for 100 days).
-                         Defaults to 'full'.
-
-    Returns:
-        pandas.DataFrame: DataFrame with daily stock data, including columns 'open', 'high', 'low',
-                          'close', 'volume', and a datetime index ('date').
-
-    Exceptions:
-        Exception: If the API request fails or the response contains an error (e.g., invalid symbol
-                   or rate limit).
-    """
-    # Construct API url
-    url = f"https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={symbol}&outputsize={outputsize}&apikey={API_KEY}"
-    print(f"Fetching data for {symbol}...")     # Debug purpose: Print ticker
-    
+    # Make the API request
     response = requests.get(url)
+    response.raise_for_status()
+    data = response.json()
 
-    # Check if request was successful
-    if response.status_code != 200:
-        raise Exception(f"API request failed for {symbol} with status code {response.status_code}")
-    
-    data = response.json() # Response brings a JSON string and here we parse it to a python dictionary (JSON structure)
-    print(f"API response keys for {symbol}: {data.keys()}")     # Debug purpose: Print response keys
+    # Check for the time series key in the response
+    if time_series_key not in data:
+        error_msg = data.get('Note', 'Unknown error')
+        logger.error(f"Error in API response for {stock_symbol}: {error_msg}", extra={"fetch_id": fetch_id})
+        raise Exception(f"Error in API response for {stock_symbol}: {error_msg}")
 
-    # Check if API errors
-    if "Time Series (Daily)" not in data:
-        raise Exception(f"Error in API response: {data.get('Note', 'Unknown error')}")
-
-    # Convert API data to DataFrame
-    time_series = data["Time Series (Daily)"]   # we only need the "Time Series (Daily)" key-value pair from data
-    df = pd.DataFrame.from_dict(time_series, orient="index")    # we need dates as index
-    df = df.astype(float)   # Convert values to float
-    df.index = pd.to_datetime(df.index, utc=True) # Convert index to datetime
-
-    # Rename columns for clarity
+    # Convert the data to a DataFrame
+    time_series = data[time_series_key]
+    df = pd.DataFrame.from_dict(time_series, orient="index")
+    df = df.astype(float)
+    df.index = pd.to_datetime(df.index, utc=True)
     df.index.name = "date"
     df.columns = ["open", "high", "low", "close", "volume"]
-
-    # Sort by date (ascending) and select 1 year of data
     df = df.sort_index()
-    one_year_ago = (pd.Timestamp.now(tz="UTC") - pd.Timedelta(days=365)).floor('D') # floor('D') rounds timestamp to start of day 00:00:00
-    df = df[df.index >= one_year_ago]
+
+    # Filter by days_back
+    cutoff_date = (pd.Timestamp.now(tz="UTC") - pd.Timedelta(days=days_back)).floor('D')
+    df = df[df.index >= cutoff_date]
+
+    if df.empty:
+        logger.warning(f"No data fetched for {stock_symbol}", extra={"fetch_id": fetch_id})
 
     return df
 
-if __name__ == "__main__":  # only runs when script is executed directly
-    """
-    Execute the script to fetch and save stock data.
+def save_stock_data(
+    df: pd.DataFrame,
+    stock_symbol: str,
+    fetch_id: str,
+    project_root: str,
+    config: dict
+) -> str:
+    """Save the stock data DataFrame to a CSV file."""
+    output_rel_path = os.path.join(config["raw_data_dir"], f"raw_{stock_symbol.lower()}_{fetch_id}.csv")
+    output_abs_path = os.path.join(project_root, output_rel_path)
+    os.makedirs(os.path.dirname(output_abs_path), exist_ok=True)
+    df.to_csv(output_abs_path, index=True)
+    logger.info(f"Data saved to {output_rel_path} with {len(df)} rows", extra={"fetch_id": fetch_id})
+    return output_rel_path
 
-    Calls fetch_data to retrieve stock data, saves it to a CSV file, and stores the ticker and
-    fetch timestamp in a configuration file.
-
-    Exceptions:
-        Exception: If an error occurs during data fetching or saving.
-    """
+def main() -> None:
+    """Main function to orchestrate the stock data fetching process."""
     try:
-        # Fetch stock data using command-line argument
-        stock_symbol = stock_symbol.upper()  # Convert to uppercase for consistency
-        stock_data = fetch_data(stock_symbol)
-        print(f"Fetched {stock_symbol} data:")
-        print(stock_data.head())
+        # Parse arguments using the utility function
+        args = parse_arguments(mandatory_args=["stock_symbol"])
 
-        # Save data to CSV
-        output_path = f"data/raw/raw_{stock_symbol.lower()}_data.csv"   # Dynamic naming
-        os.makedirs("data", exist_ok=True)
-        stock_data.to_csv(output_path, index=True)
-        print(f"Data saved to {output_path}")
+        # Handle config path
+        config_path = args.config
+        if not os.path.isabs(config_path):
+            config_path = os.path.join(PROJECT_ROOT, config_path)
+        config_dir = os.path.dirname(config_path)
+        os.makedirs(config_dir, exist_ok=True)
+        history_path = "data/fetch_history.jsonl"
 
-        # Store the ticker (stock symbol) to config file
-        config = {"stock_symbol": stock_symbol, "fetch_time": pd.Timestamp.now().isoformat()}
-        with open("data/config.json", "w") as f:
-            json.dump(config, f)
+        # Use provided fetch_id or generate one
+        if hasattr(args, 'fetch_id') and args.fetch_id:
+            fetch_id = args.fetch_id
+        else:
+            fetch_timestamp = pd.Timestamp.now()
+            fetch_id = f"fetch_{fetch_timestamp.strftime('%Y%m%d_%H%M%S')}"
+        
+        logger.info(f"Starting fetch for stock symbol: {args.stock_symbol}", extra={"fetch_id": fetch_id})
 
+        # Check for interval if api_function is TIME_SERIES_INTRADAY
+        if args.api_function == "TIME_SERIES_INTRADAY" and not args.interval:
+            logger.error("Interval is required for TIME_SERIES_INTRADAY", extra={"fetch_id": fetch_id})
+            raise ValueError("Interval is required for TIME_SERIES_INTRADAY")
+
+        # Determine stock symbol
+        stock_symbol = args.stock_symbol.upper()
+
+        # Load API key
+        load_dotenv(dotenv_path=os.path.join(PROJECT_ROOT, ".env"))
+        api_key = os.getenv("ALPHA_VANTAGE_API_KEY")
+        if not api_key:
+            logger.error("API key not found in .env file", extra={"fetch_id": fetch_id})
+            raise ValueError("API key not found in .env file")
+        
+        # Load current config
+        config = load_config(config_path, logger, fetch_id)
+
+        # Fetch stock data
+        stock_data = fetch_stock_data(
+            stock_symbol,
+            api_key,
+            fetch_id,
+            api_function=args.api_function,
+            days_back=args.days_back,
+            outputsize=args.outputsize,
+            interval=args.interval if hasattr(args, 'interval') else None
+        )
+        
+        # Log fetch details
+        logger.info(
+            f"Fetched {stock_symbol} data using {args.api_function} with shape {stock_data.shape}, "
+            f"date range: {stock_data.index.min()} to {stock_data.index.max()}",
+            extra={"fetch_id": fetch_id}
+        )
+
+        # Generate fetch metadata
+        fetch_time = pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')
+        output_path = save_stock_data(stock_data, stock_symbol, fetch_id, PROJECT_ROOT, config)
+        
+        # Create fetch details
+        fetch_details = {
+            "fetch_id": fetch_id,
+            "stock_symbol": stock_symbol,
+            "fetch_time": fetch_time,
+            "raw_data_file": output_path,
+            "data_start_date": stock_data.index.min().strftime("%Y-%m-%d") if not stock_data.empty else None,
+            "data_end_date": stock_data.index.max().strftime("%Y-%m-%d") if not stock_data.empty else None,
+            "api_function": args.api_function,
+            "days_back": args.days_back,
+            "outputsize": args.outputsize,
+            "interval": args.interval if hasattr(args, 'interval') else None,
+            "row_count": len(stock_data)
+        }
+
+        # Update config files with current_fetch
+        update_config(
+            config_path=config_path,
+            history_path=history_path,
+            logger=logger,
+            current_fetch=fetch_details
+        )
+
+        logger.info(f"Completed fetch for {stock_symbol}", extra={"fetch_id": fetch_id})
+
+    except ValueError as e:
+        logger.error(f"Configuration error: {str(e)}", extra={"fetch_id": fetch_id if 'fetch_id' in locals() else "N/A"})
+        raise SystemExit(1)
+    except requests.RequestException as e:
+        logger.error(f"Network error: {str(e)}", extra={"fetch_id": fetch_id if 'fetch_id' in locals() else "N/A"})
+        raise SystemExit(1)
     except Exception as e:
-        print(f"Error fetching or saving data: {e}")
+        logger.error(f"Unexpected error: {str(e)}", extra={"fetch_id": fetch_id if 'fetch_id' in locals() else "N/A"})
+        raise SystemExit(1)
+
+if __name__ == "__main__":
+    main()
