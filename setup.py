@@ -1,0 +1,32 @@
+from setuptools import setup, find_packages
+
+setup(
+    name='stock_price_prediction',
+    version='0.1.0',
+    description='A package for stock price prediction using machine learning',
+    author='Diego Lozano',
+    author_email='dielozmor@gmail.com',
+    url='https://github.com/dielozmor/my-portfolio',
+    packages=find_packages(),
+    install_requires=[
+        'pandas==2.3.0',
+        'numpy==2.2.6',
+        'matplotlib==3.10.3',
+        'scikit-learn==1.6.1',
+        'requests==2.32.3',
+        'python-dotenv==1.1.0',
+        'holidays==0.74',
+        'joblib==1.5.1',
+        'scipy==1.15.3',
+        'pytz==2025.2',
+        'python-dateutil==2.9.0.post0',
+        'jupyter==1.1.1',
+        'nbformat==5.10.4',
+        'nbconvert==7.16.6',
+        'traitlets==5.14.3',
+        'playwright==1.53.0',
+        'reportlab==3.6.12',
+        'PyPDF2==3.0.1',
+    ],
+    python_requires='>=3.8',
+)
