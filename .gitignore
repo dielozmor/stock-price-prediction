@@ -194,7 +194,8 @@ cython_debug/
 .cursorindexingignore
 
 # Project specific files
-docs/**/*.pdf
+docs/data_evaluation/*.pdf
+docs/model_evaluation/*.pdf
 logs/
 plots/
 
