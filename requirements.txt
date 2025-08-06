@@ -14,3 +14,5 @@ nbformat==5.10.4
 nbconvert==7.16.6
 traitlets==5.14.3
 playwright==1.53.0
+reportlab==3.6.12
+PyPDF2==3.0.1
