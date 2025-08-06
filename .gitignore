@@ -196,6 +196,7 @@ cython_debug/
 # Project specific files
 docs/**/*.pdf
 logs/
+plots/
 
 # Temporary files or folders
 personal/
