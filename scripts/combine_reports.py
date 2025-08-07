@@ -1,5 +1,6 @@
 import os
 import json
+from datetime import datetime  # Added import
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from PyPDF2 import PdfMerger
@@ -24,13 +25,16 @@ def generate_cover_page(config, cover_pdf_path, author="Diego Lozano"):
     timestamp = extract_timestamp(model_id_with)
     base_model_id = f"model_{stock_symbol.lower()}_{timestamp}"
 
+    # Get the current date dynamically
+    current_date = datetime.now().strftime("%B %d, %Y")
+
     # Define the details to display
     details = [
         f"Stock: {stock_symbol}",
         f"Fetch ID: {fetch_id}",
         f"Model ID: {base_model_id}",
         "Variants: with_outliers, without_outliers",
-        "Date: August 06, 2025",
+        f"Date: {current_date}",
         f"Author: {author}"
     ]
 
