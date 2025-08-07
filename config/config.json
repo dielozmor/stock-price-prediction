@@ -15,8 +15,8 @@
         "processed_data_file": "data/processed/processed_tsla_fetch_20250617_093553.csv"
     },
     "current_models": {
-        "with_outliers": "model_tsla_20250806_173132_with_outliers",
-        "without_outliers": "model_tsla_20250806_173132_without_outliers"
+        "with_outliers": "model_tsla_20250807_220050_with_outliers",
+        "without_outliers": "model_tsla_20250807_220050_without_outliers"
     },
     "fetch_id": "initial_setup",
     "project_root": "/home/dielozmor/dev/projects/portfolio/stock-price-prediction",
