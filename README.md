@@ -1,14 +1,31 @@
+Here’s a revised and improved version of your `README.md` for the Stock Price Prediction Project, incorporating suggestions to enhance clarity, usability, and professionalism. Below, I’ll present the updated content with explanations for the changes afterward.
+
+---
 
 # Stock Price Prediction Project
 
-**Authors**: Diego Lozano
+**Authors**: Diego Lozano  
 **Last Updated**: August 7, 2025  
+
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Project Goals](#project-goals)
+- [Data Source](#data-source)
+- [Model](#model)
+- [Directory Structure](#directory-structure)
+- [Setup and Installation](#setup-and-installation)
+- [Automation](#automation)
+- [Contributing](#contributing)
+- [License](#license)
 
 ---
 
 ## Overview
 
-This project develops a dynamic pipeline to predict the next-day closing price of stocks using machine learning, with Tesla (TSLA) as the primary focus. Designed for flexibility, it supports any stock symbol via command-line arguments. The project leverages linear regression models and is structured for automation, making it a robust demonstration of data science and DevOps skills.
+This project develops a dynamic pipeline to predict the next-day closing price of stocks using machine learning, with Tesla (TSLA) as the primary focus. Designed for flexibility, it supports any stock symbol via command-line arguments. Built with Python, it leverages linear regression models, machine learning techniques, and automation tools like cron, making it a robust demonstration of data science and DevOps skills.
 
 ---
 
@@ -16,14 +33,16 @@ This project develops a dynamic pipeline to predict the next-day closing price o
 
 - Predict next-day closing stock prices using linear regression.  
 - Support dynamic stock selection with TSLA as the initial stock.  
-- Build an automated pipeline for data retrieval, processing, and modeling.
+- Build an automated pipeline for data retrieval, processing, and modeling.  
+- Generate detailed evaluation reports to assess model performance.
 
 ---
 
 ## Data Source
 
 - **Source**: Alpha Vantage API (free tier, daily stock data).  
-- **Time Frame**: One year of daily data (June 17, 2024 - June 16, 2025 for TSLA, ~250 rows after holidays).  
+- **Time Frame**: One year of daily data (e.g., June 17, 2024 - June 16, 2025 for TSLA, ~250 rows after holidays).  
+  - *Note*: The time frame and stock can be adjusted via command-line arguments.  
 - **Features**: Previous day's closing price, daily trading volume, 5-day moving average.
 
 ---
@@ -33,6 +52,7 @@ This project develops a dynamic pipeline to predict the next-day closing price o
 - **Algorithm**: Linear regression, with two versions:  
   - Including outliers (RMSE=19.54, MAE=14.47, R²=0.77).  
   - Excluding outliers (RMSE=19.16, MAE=14.30, R²=0.78).  
+  - *Note*: Two versions are trained to assess the impact of outliers on prediction accuracy.  
 - **Output**: Models saved as `.pkl` files in `models/` with timestamped names.
 
 ---
@@ -50,7 +70,8 @@ This project develops a dynamic pipeline to predict the next-day closing price o
 - `notebooks/`: Data inspection (`inspect_data.ipynb`) and model analysis (`model_analysis.ipynb`).  
 - `plots/`: Visualizations from notebooks.  
 - `scripts/`: Core scripts (`initialize_config.py`, `fetch_data.py`, `process_data.py`, `model.py`, `export_notebook.py`, etc.).  
-- `spp/`: Utility modules (`data_utils.py`, `logging_utils.py`, `plot_utils.py`).
+- `spp/`: Utility modules (`data_utils.py`, `logging_utils.py`, `plot_utils.py`).  
+- *Note*: The `personal/` directory is for local use and not included in the GitHub repository.
 
 ---
 
@@ -84,6 +105,10 @@ Follow these steps to set up and run the stock price prediction project on your 
    - Install the required Python packages listed in `requirements.txt`:  
      ```bash  
      pip install -r requirements.txt  
+     ```  
+   - Install `papermill` for notebook automation:  
+     ```bash  
+     pip install papermill  
      ```
 
 4. **Configuration**:  
@@ -96,7 +121,7 @@ Follow these steps to set up and run the stock price prediction project on your 
      echo "ALPHA_VANTAGE_API_KEY=YOUR_API_KEY_HERE" > .env  
      ```  
    - You can obtain a free API key from [Alpha Vantage](https://www.alphavantage.co/support/#api-key).  
-   - **Note**: The stock symbol is provided via command-line arguments when running the pipeline, not set in `config.json`.
+   - *Note*: The stock symbol is provided via command-line arguments when running the pipeline, not set in `config.json`.
 
 5. **Run the Pipeline Manually**:  
    - Execute the pipeline script with a stock symbol of your choice:  
@@ -107,21 +132,7 @@ Follow these steps to set up and run the stock price prediction project on your 
      ```bash  
      ./run_pipeline.sh TSLA  
      ```  
-   - **After running**, check `docs/reports/` for the final report and `plots/` if desired for visualizations.
-
----
-
-## Additional Notes
-
-- **Prerequisite**: If you plan to execute Jupyter notebooks (e.g., `inspect_data.ipynb`), ensure `papermill` is installed:  
-  ```bash  
-  pip install papermill  
-  ```  
-- **Deactivating the Virtual Environment**: When done, deactivate the environment with:  
-  ```bash  
-  deactivate  
-  ```  
-- **Troubleshooting**: If you encounter issues, check the `logs/` directory for detailed error messages.
+   - **After running**, check `docs/reports/` for the final report and `plots/` for visualizations.
 
 ---
 
@@ -154,6 +165,25 @@ The pipeline can be automated to run at regular intervals using cron (for Unix/L
    Save the changes and exit the editor. The cron job is now scheduled.
 
 5. **Monitor the Pipeline**:  
-   Check `logs/cron.log` and `logs/pipeline.log` after the scheduled run to confirm execution.
+   After the scheduled run, check `logs/cron.log` for any errors or issues and `logs/pipeline.log` for execution details.
 
 For more details on setting up automation, refer to `docs/automation.md` (if available).
+
+---
+
+## Contributing
+
+Contributions are welcome! To contribute:  
+1. Fork the repository.  
+2. Create a new branch (`git checkout -b feature/your-feature`).  
+3. Commit your changes (`git commit -m "Add your feature"`).  
+4. Push to the branch (`git push origin feature/your-feature`).  
+5. Open a pull request.  
+
+Please ensure your code follows the project’s style and includes appropriate documentation.
+
+---
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
