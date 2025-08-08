@@ -1,4 +1,4 @@
-**Date**: August 07, 2025
+**Date**: August 08, 2025
 
 **Stage**: Model Performance Analysis
 
@@ -12,13 +12,13 @@
 # Model Evaluation
 
     Model with outliers:
-      RMSE: 15.99
-      MAE: 11.63
-      R2: -0.07
+      RMSE: 19.54
+      MAE: 14.47
+      R2: 0.77
     Model without outliers:
-      RMSE: 14.43
-      MAE: 10.84
-      R2: 0.09
+      RMSE: 19.16
+      MAE: 14.30
+      R2: 0.78
 
 
 # Visualization
