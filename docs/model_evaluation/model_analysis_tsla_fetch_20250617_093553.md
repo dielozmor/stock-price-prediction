@@ -43,20 +43,19 @@ Prediction vs. actual plots compare predicted and actual values, showing alignme
 
 
 - **Model with Outliers**:
-  - RMSE: 16.23
-  - MAE: 11.92
-  - R²: -0.40
+  - RMSE: 19.54
+  - MAE: 14.47
+  - R²: 0.77
 
 
 - **Model without Outliers**:
-  - RMSE: 14.66
-  - MAE: 11.21
-  - R²: -0.15
+  - RMSE: 19.16
+  - MAE: 14.30
+  - R²: 0.78
 
 
 - **Outlier Impact**:
-  - Date 2024-11-29: Error with outliers: 25.28, Error without outliers: 25.85
-Date 2025-06-05: Error with outliers: 51.81, Error without outliers: 53.15
+  - Date 2025-06-05: Error with outliers: 50.20, Error without outliers: 51.44
 
 
     

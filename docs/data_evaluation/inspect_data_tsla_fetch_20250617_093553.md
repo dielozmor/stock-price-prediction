@@ -30,9 +30,9 @@ Visualizations of closing price and trading volume help identify trends and anom
 
 #### **Data**
 - **Row Count**: 250
-- **Date Range**: 2024-08-13 to 2025-08-12
+- **Date Range**: 2024-06-17 to 2025-06-16
 - **Missing Values**: 0
-- **Anomalies**: 2
+- **Anomalies**: 1
 
 
     
@@ -44,8 +44,7 @@ Visualizations of closing price and trading volume help identify trends and anom
 
 
              date  column           value
-    1  2024-11-29  volume   37,167,621.00
-    2  2025-06-05  volume  292,818,655.00
+    1  2025-06-05  volume  292,818,655.00
     
     
 
@@ -56,12 +55,12 @@ Visualizations of closing price and trading volume help identify trends and anom
 
              open    high     low   close       volume
     count     250     250     250     250          250
-    mean   305.90  313.14  298.17  305.83   98,962,160
-    std     65.55   66.75   63.54   65.02   37,436,215
-    min    198.47  208.44  197.06  201.38   37,167,621
-    25%    248.34  254.32  241.40  249.98   74,440,679
-    50%    308.31  313.27  300.21  308.65   89,094,248
-    75%    345.62  354.99  336.75  344.94  115,660,580
+    mean   290.45  297.72  282.84  290.46  100,814,958
+    std     72.62   74.00   70.21   71.99   39,521,561
+    min    177.92  183.95  177.00  181.57   37,167,621
+    25%    230.44  237.30  225.10  231.46   71,340,436
+    50%    263.05  274.11  257.10  265.41   93,858,026
+    75%    345.07  351.22  335.92  344.16  120,581,185
     max    475.90  488.54  457.51  479.86  292,818,655
 
 
