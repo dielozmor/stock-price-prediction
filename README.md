@@ -13,6 +13,7 @@
 - [Model](#model)
 - [Directory Structure](#directory-structure)
 - [Setup and Installation](#setup-and-installation)
+- [Usage](#usage)
 - [Automation](#automation)
 - [Contributing](#contributing)
 - [License](#license)
@@ -21,7 +22,7 @@
 
 ## Overview
 
-This project develops a dynamic pipeline to predict the next-day closing price of stocks using machine learning, with Tesla (TSLA) as the primary focus. Designed for flexibility, it supports any stock symbol via command-line arguments. Built with Python, it leverages linear regression models, machine learning techniques, and automation tools like cron, making it a robust demonstration of data science and DevOps skills.
+This project develops a dynamic pipeline to predict next-day closing stock prices using machine learning, with Tesla (TSLA) as the primary focus. Designed for flexibility, it supports any stock symbol via command-line arguments. Built with Python, it leverages linear regression models, machine learning techniques, and automation tools like cron, producing predictions and PDF reports. It serves as a robust demonstration of data science and DevOps skills.
 
 ---
 
@@ -29,8 +30,8 @@ This project develops a dynamic pipeline to predict the next-day closing price o
 
 - Predict next-day closing stock prices using linear regression.  
 - Support dynamic stock selection with TSLA as the initial stock.  
-- Build an automated pipeline for data retrieval, processing, and modeling.  
-- Generate detailed evaluation reports to assess model performance.
+- Build an automated pipeline for data retrieval, processing, modeling, prediction, and reporting.  
+- Generate detailed evaluation reports (PDF) to assess model performance.
 
 ---
 
@@ -66,8 +67,9 @@ This project develops a dynamic pipeline to predict the next-day closing price o
 - `models/`: Trained models and history (`models_history.jsonl`).  
 - `notebooks/`: Data inspection (`inspect_data.ipynb`) and model analysis (`model_analysis.ipynb`).  
 - `plots/`: Visualizations from notebooks.  
-- `scripts/`: Core scripts (`initialize_config.py`, `fetch_data.py`, `process_data.py`, `model.py`, `export_notebook.py`, `combine_reports.py`, `predict.py`, etc.).  
+- `scripts/`: Core scripts (`initialize_config.py`, `fetch_data.py`, `process_data.py`, `model.py`, `export_notebook.py`, `combine_report.py`, `predict.py`).  
 - `spp/`: Utility modules (`data_utils.py`, `logging_utils.py`, `plot_utils.py`).  
+- *Note*: The `personal/` directory is for local use and not included in the GitHub repository.
 
 ---
 
@@ -132,11 +134,50 @@ Follow these steps to set up and run the stock price prediction project on your 
 
 ---
 
+## Usage
+
+- **Run the Full Pipeline**:  
+  ```bash  
+  ./run_pipeline.sh <stock_symbol>  
+  ```  
+  Example:  
+  ```bash  
+  ./run_pipeline.sh TSLA  
+  ```
+
+- **Run Individual Scripts**:  
+  - Fetch data:  
+    ```bash  
+    python scripts/fetch_data.py TSLA  
+    ```  
+  - Process data:  
+    ```bash  
+    python scripts/process_data.py --step clean TSLA  
+    ```  
+  - Train models:  
+    ```bash  
+    python scripts/model.py TSLA  
+    ```  
+  - Generate predictions:  
+    ```bash  
+    python scripts/predict.py TSLA  
+    ```  
+  - Combine reports:  
+    ```bash  
+    python scripts/combine_report.py  
+    ```
+
+- **View Outputs**:  
+  - Predictions: `data/predictions/` (e.g., `TSLA_predictions_20250813.csv`)  
+  - Reports: `docs/reports/` (PDF only, e.g., `final_report_fetch_20250813_084101.pdf`)  
+  - Visualizations: `plots/` (e.g., `predictions_tsla_20250813_084114_with_outliers.png`)  
+  - Logs: `logs/pipeline.log`
+
+---
+
 ## Automation
 
-The pipeline can be automated to run at regular intervals using cron (for Unix/Linux/MacOS) or Task Scheduler (for Windows). This is ideal for keeping models up-to-date with the latest stock data.
-
-For detailed steps, refer to [docs/automation.md](docs/automation.md).
+The pipeline can be automated to run at regular intervals using cron (for Unix/Linux/MacOS) or Task Scheduler (for Windows). This is ideal for keeping models up-to-date with the latest stock data. For detailed steps, refer to [docs/automation.md](docs/automation.md).
 
 ---
 

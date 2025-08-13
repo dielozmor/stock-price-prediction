@@ -4,24 +4,24 @@ This guide will walk you through automating your `run_pipeline.sh` script using 
 
 ---
 
-### **Step 1: Test the Automation Script Manually**
+### Step 1: Test the Automation Script Manually
 
 Before automating, test the script manually to confirm it works perfectly. This saves headaches later!
 
-#### **1.1 Make the Script Executable**
+#### 1.1 Make the Script Executable
 - Ensure your script has executable permissions:
   ```bash
   chmod +x /home/dielozmor/dev/projects/portfolio/stock-price-prediction/run_pipeline.sh
   ```
 
-#### **1.2 Run the Script Manually**
+#### 1.2 Run the Script Manually
 - Run the script with a stock symbol (e.g., TSLA):
   ```bash
   /home/dielozmor/dev/projects/portfolio/stock-price-prediction/run_pipeline.sh TSLA
   ```
   - **Note**: The script expects a stock symbol as an argument. Swap `TSLA` for another symbol if needed.
 
-#### **1.3 Verify Each Step**
+#### 1.3 Verify Each Step
 - **Check the Log File**: The script logs to `logs/pipeline.log`. Inspect it with:
   ```bash
   cat /home/dielozmor/dev/projects/portfolio/stock-price-prediction/logs/pipeline.log
@@ -35,10 +35,10 @@ Before automating, test the script manually to confirm it works perfectly. This 
   - **Notebooks**: Confirm executed notebooks in `docs/data_evaluation/` and `docs/model_evaluation/` (e.g., `inspect_data_executed.ipynb`).
   - **Exports**: Verify Markdown/PDF files in `docs/data_evaluation/` and `docs/model_evaluation/`.
   - **Models**: Check `models/` for new model files (e.g., `model_tsla_<timestamp>_with_outliers.pkl`) and `models/models_history.jsonl` for metrics.
-  - **Reports**: Ensure `combine_reports.py` generates the combined report (PDF only in `docs/reports/`).
+  - **Reports**: Ensure `combine_report.py` generates the combined report (PDF only in `docs/reports/`).
 - **Troubleshoot Errors**: If something fails, use `pipeline.log` to pinpoint the issue (e.g., missing file, API error) and fix it before moving on.
 
-#### **1.4 Ensure Dependencies**
+#### 1.4 Ensure Dependencies
 - The script uses `papermill` for notebooks. Install it if missing:
   ```bash
   pip install papermill
@@ -50,30 +50,30 @@ Before automating, test the script manually to confirm it works perfectly. This 
 
 ---
 
-### **Step 2: Set Up the Cron Task**
+### Step 2: Set Up the Cron Task
 
 Once the script works manually, let’s schedule it with cron for automation.
 
-#### **2.1 Create a Log Directory**
+#### 2.1 Create a Log Directory
 - Ensure the `logs/` directory exists:
   ```bash
   mkdir -p /home/dielozmor/dev/projects/portfolio/stock-price-prediction/logs
   ```
 
-#### **2.2 Open the Cron Editor**
+#### 2.2 Open the Cron Editor
 - Edit your cron jobs:
   ```bash
   crontab -e
   ```
 
-#### **2.3 Add the Cron Job**
+#### 2.3 Add the Cron Job
 - Add this line to run the pipeline every Monday at 8 AM:
   ```bash
-  0 8 * * 1 /home/dielozmor/dev/projects/portfolio/stock-price-prediction/run_pipeline.sh TSLA >> /home/dielozmor/dev/projects/portfolio/stock-price-prediction/logs/cron.log 2>&1
+  0 8 * * 1 /bin/bash -c "source /home/dielozmor/dev/projects/portfolio/stock-price-prediction/venv/bin/activate && /home/dielozmor/dev/projects/portfolio/stock-price-prediction/run_pipeline.sh TSLA" >> /home/dielozmor/dev/projects/portfolio/stock-price-prediction/logs/cron.log 2>&1
   ```
 - **Breakdown**:
   - `0 8 * * 1`: 8:00 AM every Monday.
-  - `TSLA`: Stock symbol argument (change as needed).
+  - `source ... && run_pipeline.sh TSLA`: Activates the virtual environment and runs the pipeline.
   - `>> logs/cron.log 2>&1`: Logs output and errors to `cron.log`.
 - **Customize the Schedule**:
   - Daily at midnight: `0 0 * * *`
@@ -81,7 +81,7 @@ Once the script works manually, let’s schedule it with cron for automation.
   - Try [crontab.guru](https://crontab.guru/) for other options.
 - **Save and Exit**: In `nano`, press `Ctrl+O`, `Enter`, then `Ctrl+X`.
 
-#### **2.4 Verify Cron Setup**
+#### 2.4 Verify Cron Setup
 - List your cron jobs to confirm:
   ```bash
   crontab -l
@@ -93,7 +93,7 @@ Once the script works manually, let’s schedule it with cron for automation.
 
 ---
 
-### **Step 3: Monitor and Troubleshoot**
+### Step 3: Monitor and Troubleshoot
 
 After the cron job runs, ensure everything worked as expected.
 
@@ -103,10 +103,24 @@ After the cron job runs, ensure everything worked as expected.
 - **Verify Outputs**: Confirm all files (data, models, exports) are created in their directories.
 - **Common Issues and Fixes**:
   - **Path Errors**: Cron uses absolute paths. If it fails, double-check paths in `run_pipeline.sh`.
-  - **Virtual Environment**: If the script relies on a virtual environment, update the cron job:
-    ```bash
-    0 8 * * 1 /bin/bash -c "source /home/dielozmor/dev/projects/portfolio/stock-price-prediction/venv/bin/activate && /home/dielozmor/dev/projects/portfolio/stock-price-prediction/run_pipeline.sh TSLA" >> /home/dielozmor/dev/projects/portfolio/stock-price-prediction/logs/cron.log 2>&1
-    ```
+  - **Virtual Environment**: The cron job includes virtual environment activation to ensure dependencies are loaded.
   - **API Limits**: If Alpha Vantage rate limits are hit, add delays or error handling in `fetch_data.py`.
 
 ---
+
+### Pipeline Workflow
+The pipeline (`run_pipeline.sh`) executes:
+1. `initialize_config.py`: Sets up `config/config.json`.
+2. `fetch_data.py`: Fetches stock data from Alpha Vantage.
+3. `inspect_data.ipynb`: Validates data and detects outliers (saves to `data/outliers/`).
+4. `process_data.py`: Cleans data and engineers features.
+5. `model.py`: Trains linear regression models (with/without outliers).
+6. `predict.py`: Generates next-day predictions (saves to `data/predictions/`).
+7. `model_analysis.ipynb`: Evaluates model performance and generates plots.
+8. `combine_report.py`: Creates a final PDF report in `docs/reports/`.
+
+---
+
+### Additional Tips
+- **Test First**: Use a 5-minute schedule (`*/5 * * * *`) to verify cron, then revert to weekly.
+- **Ask for Help**: Share `cron.log` or `pipeline.log` errors for assistance.
