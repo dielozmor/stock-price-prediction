@@ -198,6 +198,7 @@ docs/data_evaluation/*.pdf
 docs/model_evaluation/*.pdf
 logs/
 plots/
+notebooks/temp/
 
 # Temporary files or folders
 personal/

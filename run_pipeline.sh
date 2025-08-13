@@ -44,11 +44,14 @@ fi
 
 # Run inspect_data.ipynb with parameters
 echo "Running inspect_data.ipynb at $(date)" | tee -a logs/pipeline.log
-papermill notebooks/inspect_data.ipynb docs/data_evaluation/inspect_data_executed.ipynb \
+cd /home/dielozmor/dev/projects/portfolio/stock-price-prediction  # Ensure correct cwd
+pwd | tee -a logs/pipeline.log  # Log cwd for debugging
+papermill notebooks/inspect_data.ipynb notebooks/temp/inspect_data_temp.ipynb \
     -p stock_symbol $stock_symbol \
     -p fetch_id $fetch_id \
     -p config_path "config/config.json" \
     -p auto_confirm_outliers "True" \
+    --log-output \
     2>&1 | tee -a logs/pipeline.log
 if [ ${PIPESTATUS[0]} -ne 0 ]; then
     echo "Error in inspect_data.ipynb at $(date)" | tee -a logs/pipeline.log
@@ -89,11 +92,13 @@ fi
 
 # Run model_analysis.ipynb with parameters
 echo "Running model_analysis.ipynb at $(date)" | tee -a logs/pipeline.log
-papermill notebooks/model_analysis.ipynb docs/model_evaluation/model_analysis_executed.ipynb \
+cd /home/dielozmor/dev/projects/portfolio/stock-price-prediction  # Ensure correct cwd
+pwd | tee -a logs/pipeline.log
+papermill notebooks/model_analysis.ipynb notebooks/temp/model_analysis_temp.ipynb \
     -p stock_symbol $stock_symbol \
     -p fetch_id $fetch_id \
     -p config_path "config/config.json" \
-    -p auto_generate_summary "True" \
+    --log-output \
     2>&1 | tee -a logs/pipeline.log
 if [ ${PIPESTATUS[0]} -ne 0 ]; then
     echo "Error in model_analysis.ipynb at $(date)" | tee -a logs/pipeline.log
