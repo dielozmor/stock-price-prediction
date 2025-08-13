@@ -1,6 +1,6 @@
 import os
 import json
-from datetime import datetime  # Added import
+from datetime import datetime
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from PyPDF2 import PdfMerger
@@ -10,7 +10,7 @@ from spp.data_utils import load_config, extract_timestamp
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
 def generate_cover_page(config, cover_pdf_path, author="Diego Lozano"):
-    """Generate a cover page PDF dynamically using data from the config at the specified path."""
+    """Generate a cover page PDF dynamically with an automation-friendly executive summary."""
     c = canvas.Canvas(cover_pdf_path, pagesize=letter)
     width, height = letter
 
@@ -30,20 +30,56 @@ def generate_cover_page(config, cover_pdf_path, author="Diego Lozano"):
 
     # Define the details to display
     details = [
-        f"Stock: {stock_symbol}",
-        f"Fetch ID: {fetch_id}",
-        f"Model ID: {base_model_id}",
-        "Variants: with_outliers, without_outliers",
-        f"Date: {current_date}",
-        f"Author: {author}"
+        ("Stock:", stock_symbol),
+        ("Fetch ID:", fetch_id),
+        ("Model ID:", base_model_id),
+        ("Variants:", "with_outliers, without_outliers"),
+        ("Date:", current_date),
+        ("Author:", author)
     ]
 
-    # Set font for details and draw each line
-    c.setFont("Helvetica", 14)
+    # Draw details with bold labels and regular values on the same line
     y = height - 150
-    for line in details:
-        c.drawCentredString(width / 2, y, line)
-        y -= 20
+    for label, value in details:
+        # Set bold font for label
+        c.setFont("Helvetica-Bold", 14)
+        label_width = c.stringWidth(label, "Helvetica-Bold", 14)
+        c.drawString(width / 2 - label_width - 55, y, label)  # Label to the left
+
+        # Set regular font for value
+        c.setFont("Helvetica", 14)
+        value_width = c.stringWidth(value, "Helvetica", 14)
+        c.drawString(width / 2 - 45, y, value)  # Value to the right
+
+        y -= 30  # Vertical spacing between lines
+
+    # Add extra space before Project Overview
+    y -= 50  # Added 50 points of extra space
+
+    # Project Overview
+    c.setFont("Helvetica-Bold", 16)
+    y -= 30
+    c.drawCentredString(width / 2, y, "Project Overview")  # Centered title
+    c.setFont("Helvetica", 12)
+    y -= 20
+    project_overview = (
+        "This report examines a machine learning pipeline designed to predict stock price movements, adaptable to any stock symbol. The pipeline leverages historical data and key market features to assess predictive performance across various conditions. Visualizations illustrate the accuracy and limitations of the predictions, particularly during volatile periods. Future enhancements could involve exploring advanced techniques and additional features to improve robustness."
+    )
+    # Wrap text to fit page width
+    text = c.beginText(width / 2 - (width - 100) / 2, y)  # Centered text block
+    text.setFont("Helvetica", 12)
+    text.setLeading(14)  # Line spacing
+    lines = project_overview.split()
+    current_line = ""
+    for word in lines:
+        if c.stringWidth(current_line + word, "Helvetica", 12) < (width - 100):
+            current_line += word + " "
+        else:
+            text.textLine(current_line)
+            current_line = word + " "
+            y -= 14
+    text.textLine(current_line)
+    c.drawText(text)
 
     c.showPage()
     c.save()
@@ -81,7 +117,7 @@ if __name__ == "__main__":
     cover_pdf = os.path.join(reports_dir, "cover_page.pdf")
     final_pdf = os.path.join(reports_dir, f"final_report_{fetch_id}.pdf")
 
-    # Generate dynamic cover page inside docs/reports/
+    # Generate dynamic cover page with executive summary
     generate_cover_page(config, cover_pdf)
 
     # Merge all PDFs into the final report
