@@ -1,11 +1,7 @@
-Here’s a revised and improved version of your `README.md` for the Stock Price Prediction Project, incorporating suggestions to enhance clarity, usability, and professionalism. Below, I’ll present the updated content with explanations for the changes afterward.
-
----
-
 # Stock Price Prediction Project
 
 **Authors**: Diego Lozano  
-**Last Updated**: August 7, 2025  
+**Last Updated**: August 13, 2025  
 
 ---
 
@@ -41,7 +37,7 @@ This project develops a dynamic pipeline to predict the next-day closing price o
 ## Data Source
 
 - **Source**: Alpha Vantage API (free tier, daily stock data).  
-- **Time Frame**: One year of daily data (e.g., June 17, 2024 - June 16, 2025 for TSLA, ~250 rows after holidays).  
+- **Time Frame**: One year of daily data (e.g., August 13, 2024 - August 12, 2025 for TSLA, ~250 rows after holidays).  
   - *Note*: The time frame and stock can be adjusted via command-line arguments.  
 - **Features**: Previous day's closing price, daily trading volume, 5-day moving average.
 
@@ -54,6 +50,7 @@ This project develops a dynamic pipeline to predict the next-day closing price o
   - Excluding outliers (RMSE=19.16, MAE=14.30, R²=0.78).  
   - *Note*: Two versions are trained to assess the impact of outliers on prediction accuracy.  
 - **Output**: Models saved as `.pkl` files in `models/` with timestamped names.
+- **Prediction**: Use `scripts/predict.py` to make predictions with the trained models.
 
 ---
 
@@ -62,16 +59,15 @@ This project develops a dynamic pipeline to predict the next-day closing price o
 - `config/`: Configuration file (`config.json`) for settings (auto-generated).  
 - `data/`: Raw (`raw/`), processed (`processed/`), intermediate (`intermediate/`), and outlier (`outliers/`) data.  
 - `docs/`:  
-  - `data_evaluation/`: Reports on data inspection.  
-  - `model_evaluation/`: Reports on model performance.  
-  - `reports/`: Final evaluation report summarizing project outcomes.  
+  - `data_evaluation/`: Reports on data inspection (Markdown and PDF exports from notebooks).  
+  - `model_evaluation/`: Reports on model performance (Markdown and PDF exports from notebooks).  
+  - `reports/`: Final evaluation report (PDF only, summarizing data and model evaluation).  
 - `logs/`: Log files for debugging and tracking.  
 - `models/`: Trained models and history (`models_history.jsonl`).  
 - `notebooks/`: Data inspection (`inspect_data.ipynb`) and model analysis (`model_analysis.ipynb`).  
 - `plots/`: Visualizations from notebooks.  
-- `scripts/`: Core scripts (`initialize_config.py`, `fetch_data.py`, `process_data.py`, `model.py`, `export_notebook.py`, etc.).  
+- `scripts/`: Core scripts (`initialize_config.py`, `fetch_data.py`, `process_data.py`, `model.py`, `export_notebook.py`, `combine_reports.py`, `predict.py`, etc.).  
 - `spp/`: Utility modules (`data_utils.py`, `logging_utils.py`, `plot_utils.py`).  
-- *Note*: The `personal/` directory is for local use and not included in the GitHub repository.
 
 ---
 
@@ -82,7 +78,7 @@ Follow these steps to set up and run the stock price prediction project on your 
 1. **Clone the Repository**:  
    - Clone the project repository to your local machine and navigate to the project directory:  
      ```bash  
-     git clone https://github.com/your-username/stock-price-prediction.git  
+     git clone https://github.com/dielozmor/stock-price-prediction.git  
      cd stock-price-prediction  
      ```
 
@@ -121,7 +117,7 @@ Follow these steps to set up and run the stock price prediction project on your 
      echo "ALPHA_VANTAGE_API_KEY=YOUR_API_KEY_HERE" > .env  
      ```  
    - You can obtain a free API key from [Alpha Vantage](https://www.alphavantage.co/support/#api-key).  
-   - *Note*: The stock symbol is provided via command-line arguments when running the pipeline, not set in `config.json`.
+   - *Note*: The stock symbol must be provided via command-line arguments when running the pipeline, not set in `config.json`.
 
 5. **Run the Pipeline Manually**:  
    - Execute the pipeline script with a stock symbol of your choice:  
@@ -132,7 +128,7 @@ Follow these steps to set up and run the stock price prediction project on your 
      ```bash  
      ./run_pipeline.sh TSLA  
      ```  
-   - **After running**, check `docs/reports/` for the final report and `plots/` for visualizations.
+   - **After running**, check `docs/reports/` for the final report (PDF only) and `plots/` for visualizations.
 
 ---
 
@@ -140,34 +136,7 @@ Follow these steps to set up and run the stock price prediction project on your 
 
 The pipeline can be automated to run at regular intervals using cron (for Unix/Linux/MacOS) or Task Scheduler (for Windows). This is ideal for keeping models up-to-date with the latest stock data.
 
-### Steps to Set Up Automation with Cron
-
-1. **Make the Script Executable**:  
-   Ensure `run_pipeline.sh` is executable:  
-   ```bash  
-   chmod +x /path/to/stock-price-prediction/run_pipeline.sh  
-   ```
-
-2. **Open the Cron Editor**:  
-   Run:  
-   ```bash  
-   crontab -e  
-   ```
-
-3. **Add the Cron Job**:  
-   Add this line to run the pipeline every Monday at 8 AM, providing the stock symbol (e.g., TSLA):  
-   ```bash  
-   0 8 * * 1 /path/to/stock-price-prediction/run_pipeline.sh TSLA >> /path/to/logs/cron.log 2>&1  
-   ```  
-   Replace `/path/to/` with your project’s actual path and `TSLA` with your desired stock symbol.
-
-4. **Save and Exit**:  
-   Save the changes and exit the editor. The cron job is now scheduled.
-
-5. **Monitor the Pipeline**:  
-   After the scheduled run, check `logs/cron.log` for any errors or issues and `logs/pipeline.log` for execution details.
-
-For more details on setting up automation, refer to `docs/automation.md` (if available).
+For detailed steps, refer to [docs/automation.md](docs/automation.md).
 
 ---
 

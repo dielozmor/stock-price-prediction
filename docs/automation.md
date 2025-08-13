@@ -35,7 +35,7 @@ Before automating, test the script manually to confirm it works perfectly. This 
   - **Notebooks**: Confirm executed notebooks in `docs/data_evaluation/` and `docs/model_evaluation/` (e.g., `inspect_data_executed.ipynb`).
   - **Exports**: Verify Markdown/PDF files in `docs/data_evaluation/` and `docs/model_evaluation/`.
   - **Models**: Check `models/` for new model files (e.g., `model_tsla_<timestamp>_with_outliers.pkl`) and `models/models_history.jsonl` for metrics.
-  - **Reports**: Ensure `combine_reports.py` generates the combined report.
+  - **Reports**: Ensure `combine_reports.py` generates the combined report (PDF only in `docs/reports/`).
 - **Troubleshoot Errors**: If something fails, use `pipeline.log` to pinpoint the issue (e.g., missing file, API error) and fix it before moving on.
 
 #### **1.4 Ensure Dependencies**
@@ -110,15 +110,3 @@ After the cron job runs, ensure everything worked as expected.
   - **API Limits**: If Alpha Vantage rate limits are hit, add delays or error handling in `fetch_data.py`.
 
 ---
-
-### **Additional Tips**
-- **Test First**: Use a temporary 5-minute schedule (`*/5 * * * *`) to verify cron works, then switch to your final schedule.
-- **Stay Organized**: Save this guide in `docs/automation.md` for reference.
-- **Ask for Help**: If anything goes wrong, share the error from `cron.log` or `pipeline.log`, and I’ll assist!
-
----
-
-### **Next Steps**
-1. **Test Manually**: Run `./run_pipeline.sh TSLA` and verify all outputs.
-2. **Schedule with Cron**: Add the cron job from Step 2.3.
-3. **Monitor**: After the first run, check logs and outputs.
