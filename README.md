@@ -156,8 +156,9 @@ Follow these steps to set up and run the stock price prediction project on your 
     ```bash  
     python scripts/fetch_data.py TSLA  
     ```
-  -Inspect data:
+  - Inspect data:
     (Automated by pipeline; for manual execution, use papermill with parameters from run_pipeline.sh or execute cells manually in inspect_data.ipynb) 
+
   - Export inspect_data Notebook:
     ``` bash
     python scripts/export_notebook.py --notebook inspect_data.ipynb
@@ -180,6 +181,7 @@ Follow these steps to set up and run the stock price prediction project on your 
     ```
   - Export model_analysis notebook
     (Automated by pipeline; for manual execution, use papermill with parameters from run_pipeline.sh or execute cells manually in model_analysis.ipynb)
+    
   - Generate predictions:  
     ```bash  
     python scripts/predict.py TSLA  
