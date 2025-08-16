@@ -3,8 +3,8 @@
 Process stock data by cleaning raw data or engineering features based on the specified step.
 
 This script processes stock data in two possible steps:
-- 'clean': Loads raw data, cleans it, flags outliers based on config, and saves the cleaned data.
-- 'feature': Loads cleaned data, engineers features, and saves the processed data.
+- 'clean': Loads raw data, cleans it, flags outliers using JSON, and saves the cleaned data.
+- 'feature': Loads cleaned data, engineers features, updates config.json with features and target, and saves the processed data.
 It uses utility functions from data_utils and logging_utils for consistency with fetch_data.py.
 """
 
@@ -15,6 +15,7 @@ import os
 from typing import Dict, Optional
 
 import pandas as pd
+import numpy as np
 from dotenv import load_dotenv
 
 from spp.data_utils import (
@@ -36,14 +37,12 @@ logger = setup_logging(logger_name="process_data", log_dir="logs")
 
 def clean_data(df: pd.DataFrame, stock_symbol: str) -> pd.DataFrame:
     """Clean the stock data: handle missing values, duplicates, and validate data."""
-    # Handle missing values
     if df.isnull().sum().sum() > 0:
         logger.info("Missing values found. Applying forward fill.")
         df = df.ffill()
     else:
         logger.info("No missing values found.")
 
-    # Remove duplicates based on date index
     duplicates = df.index.duplicated().sum()
     if duplicates > 0:
         logger.info(f"Removing {duplicates} duplicate rows.")
@@ -51,21 +50,18 @@ def clean_data(df: pd.DataFrame, stock_symbol: str) -> pd.DataFrame:
     else:
         logger.info("No duplicates found.")
 
-    # Validate required columns
     required_columns = ["open", "high", "low", "close", "volume"]
     missing_columns = set(required_columns) - set(df.columns)
     if missing_columns:
         logger.error(f"Missing required columns: {missing_columns}")
         raise KeyError(f"Missing required columns: {missing_columns}")
 
-    # Enforce data types
     expected_dtypes = {col: "float64" for col in required_columns}
     for col, dtype in expected_dtypes.items():
         if df[col].dtype != dtype:
             logger.error(f"Invalid data type for {col}: expected {dtype}, got {df[col].dtype}")
             raise ValueError(f"Invalid data type for {col}")
 
-    # Check for negative values
     if (df[required_columns] < 0).any().any():
         logger.error("Negative values found in price or volume columns.")
         raise ValueError("Negative values found in data")
@@ -108,11 +104,21 @@ def flag_outliers(df: pd.DataFrame, config: Dict, fetch_id: str) -> pd.DataFrame
 
 def engineer_features(df: pd.DataFrame) -> pd.DataFrame:
     """Add engineered features to the DataFrame."""
-    df["prev_close"] = df["close"].shift(1).fillna(df["close"])
+    df["prev_close"] = df["close"].shift(1)
     df["ma5"] = df["close"].rolling(window=5, min_periods=1).mean()
-    df["next_close"] = df["close"].shift(-1).fillna(df["close"])
-    logger.info("Added features: prev_close, ma5, next_close")
+    df["next_close"] = df["close"].shift(-1)
+    df = df.fillna(method='ffill').fillna(method='bfill').dropna()
+    logger.info("Added features: prev_close, ma5")
     return df
+
+def update_features_in_config(config: Dict, config_path: str, logger: logging.Logger) -> Dict:
+    """Update the features and target in config.json."""
+    features = ["prev_close", "volume", "ma5"]
+    config["features"] = features
+    config["target"] = "next_close"
+    update_config(config_path=config_path, logger=logger, **config)
+    logger.info(f"Updated config.json with features: {features} and target: next_close")
+    return config
 
 def main():
     """Process stock data based on the specified step."""
@@ -141,6 +147,7 @@ def main():
             df_featured = engineer_features(df_cleaned)
             output_path = save_data(df_featured, stock_symbol, fetch_id, "processed", PROJECT_ROOT, config, logger)
             current_fetch["processed_data_file"] = output_path
+            config = update_features_in_config(config, config_path, logger)
             update_config(config_path=config_path, logger=logger, current_fetch=current_fetch)
 
     except Exception as e:

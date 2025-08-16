@@ -2,7 +2,7 @@
 """
 Model training and evaluation script for stock price prediction.
 
-This script trains linear regression models on processed stock data, evaluates their performance,
+This script trains Random Forest models on processed stock data, evaluates their performance,
 updates config.json with model IDs, and appends metadata to models_history.jsonl.
 """
 
@@ -13,7 +13,7 @@ from datetime import datetime
 from typing import Dict, Tuple
 import pandas as pd
 import joblib
-from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error, root_mean_squared_error, r2_score
 from sklearn.model_selection import train_test_split
 from spp.logging_utils import setup_logging
@@ -25,11 +25,21 @@ PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 # Initialize logger
 logger = setup_logging(logger_name="train_model", log_dir="logs")
 
+def select_features(df: pd.DataFrame, config: Dict) -> Tuple[pd.DataFrame, pd.Series]:
+    """Select features and target from DataFrame based on config.
 
-def select_features(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series]:
-    """Select features and target from DataFrame."""
-    features = ['prev_close', 'volume', 'ma5']
-    target = 'next_close'
+    Args:
+        df (pd.DataFrame): Processed stock data.
+        config (Dict): Configuration dictionary.
+
+    Returns:
+        Tuple[pd.DataFrame, pd.Series]: Features (X) and target (Y).
+
+    Raises:
+        ValueError: If required columns are missing or NaN values are present.
+    """
+    features = config['features']
+    target = config['target']
     required_columns = features + [target]
     
     missing = [col for col in required_columns if col not in df.columns]
@@ -42,16 +52,21 @@ def select_features(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.Series]:
     
     return X, Y
 
-
 def split_data(X: pd.DataFrame, Y: pd.Series, test_size: float = 0.2) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
     """Split data into training and testing sets."""
     return train_test_split(X, Y, test_size=test_size, shuffle=False)
 
-
-def train_model(X_train: pd.DataFrame, Y_train: pd.Series, stock_symbol: str, timestamp: str, fetch_id: str, outlier_handling: str) -> Tuple[LinearRegression, Dict[str, any]]:
-    """Train and save a linear regression model, returning the model and metadata."""
+def train_model(X_train: pd.DataFrame, Y_train: pd.Series, stock_symbol: str, timestamp: str, fetch_id: str, outlier_handling: str) -> Tuple[RandomForestRegressor, Dict[str, any]]:
+    """Train and save a Random Forest model, returning the model and metadata."""
     try:
-        model = LinearRegression().fit(X_train, Y_train)
+        model = RandomForestRegressor(
+            n_estimators=300,
+            max_depth=20,
+            min_samples_split=5,
+            min_samples_leaf=2,
+            random_state=42
+        )
+        model.fit(X_train, Y_train)
         model_id = f"model_{stock_symbol.lower()}_{timestamp}_{outlier_handling}"
         model_dir = os.path.join(PROJECT_ROOT, "models")
         os.makedirs(model_dir, exist_ok=True)
@@ -66,15 +81,22 @@ def train_model(X_train: pd.DataFrame, Y_train: pd.Series, stock_symbol: str, ti
             "timestamp": timestamp,
             "outlier_handling": outlier_handling,
             "features": X_train.columns.tolist(),
-            "target": "next_close"
+            "target": "next_close",
+            "model_type": "RandomForest",
+            "hyperparameters": {
+                "n_estimators": 300,
+                "max_depth": 20,
+                "min_samples_split": 5,
+                "min_samples_leaf": 2,
+                "random_state": 42
+            }
         }
         return model, metadata
     except Exception as e:
         logger.error(f"Model training failed: {e}", extra={"fetch_id": fetch_id})
         raise
 
-
-def evaluate_model(model: LinearRegression, X_test: pd.DataFrame, Y_test: pd.Series) -> Dict[str, float]:
+def evaluate_model(model: RandomForestRegressor, X_test: pd.DataFrame, Y_test: pd.Series) -> Dict[str, float]:
     """Evaluate the model and return performance metrics."""
     Y_pred = model.predict(X_test)
     metrics = {
@@ -84,7 +106,6 @@ def evaluate_model(model: LinearRegression, X_test: pd.DataFrame, Y_test: pd.Ser
     }
     return metrics
 
-
 def append_to_models_history(metadata: Dict[str, any], history_path: str = "models/models_history.jsonl") -> None:
     """Append model metadata to models_history.jsonl."""
     abs_history_path = os.path.join(PROJECT_ROOT, history_path)
@@ -92,7 +113,6 @@ def append_to_models_history(metadata: Dict[str, any], history_path: str = "mode
     with open(abs_history_path, "a") as f:
         f.write(json.dumps(metadata) + "\n")
     logger.info(f"Appended model metadata to {history_path}", extra={"model_id": metadata.get("model_id", "N/A")})
-
 
 def main() -> None:
     """Run the model training and evaluation pipeline."""
@@ -107,7 +127,7 @@ def main() -> None:
 
         # Load and prepare data
         df = load_data(config, stock_symbol, fetch_id, data_type="processed", logger=logger)
-        X, Y = select_features(df)
+        X, Y = select_features(df, config)
         X_train, X_test, Y_train, Y_test = split_data(X, Y)
 
         # Model with outliers
@@ -121,7 +141,7 @@ def main() -> None:
         if 'is_outlier' in df.columns:
             df_no_outliers = df[df['is_outlier'] == False]
             if not df_no_outliers.empty:
-                X_no, Y_no = select_features(df_no_outliers)
+                X_no, Y_no = select_features(df_no_outliers, config)
                 X_train_no, X_test_no, Y_train_no, Y_test_no = split_data(X_no, Y_no)
                 model_no, metadata_no = train_model(X_train_no, Y_train_no, stock_symbol, timestamp, fetch_id, "without_outliers")
                 metrics_no = evaluate_model(model_no, X_test_no, Y_test_no)
@@ -142,7 +162,6 @@ def main() -> None:
     except Exception as e:
         logger.error(f"Pipeline failed: {e}", extra={"fetch_id": fetch_id})
         raise
-
 
 if __name__ == "__main__":
     main()

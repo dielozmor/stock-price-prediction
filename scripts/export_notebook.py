@@ -10,7 +10,7 @@ import nbformat
 from nbconvert import MarkdownExporter, WebPDFExporter
 from traitlets.config import Config
 from datetime import datetime
-from spp.data_utils import load_config, parse_arguments
+from spp.data_utils import load_config, parse_arguments, extract_timestamp
 from spp.logging_utils import setup_logging
 from tag_filter import TagFilterPreprocessor
 
@@ -20,6 +20,7 @@ logger = setup_logging(logger_name="export_notebook", log_dir="logs")
 def load_notebook(
     notebook_path: str
 ) -> nbformat.NotebookNode:
+    logger.info(f"Attempting to load notebook: {notebook_path}")
     if not os.path.exists(notebook_path):
         error_msg = f"Notebook {notebook_path} not found"
         logger.error(error_msg)
@@ -33,6 +34,7 @@ def export_markdown(
     config: Config = None
 ) -> None:
     try:
+        logger.info(f"Exporting to Markdown: {output_path}")
         md_exporter = MarkdownExporter(config=config)
         (body, resources) = md_exporter.from_notebook_node(nb)
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
@@ -49,6 +51,7 @@ def export_pdf(
     config: Config = None
 ) -> None:
     try:
+        logger.info(f"Exporting to PDF: {output_path}")
         webpdf_exporter = WebPDFExporter(config=config)
         body, resources = webpdf_exporter.from_notebook_node(nb)
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
@@ -67,18 +70,22 @@ def main() -> None:
         config_path = os.path.join(PROJECT_ROOT, args.config)
         config = load_config(config_path=config_path, logger=logger)
 
+        # Extract base notebook name without path or extension for mapping
+        notebook_base = os.path.splitext(os.path.basename(args.notebook))[0]
+
         notebook_to_dir = {
-            "inspect_data.ipynb": "docs_data_eval_dir",
-            "model_analysis.ipynb": "docs_model_eval_dir",
-            "final_report.ipynb": "docs_reports_dir",
-            "final_report_executed.ipynb": "docs_reports_dir"
+            "inspect_data": "docs_data_eval_dir",
+            "model_analysis": "docs_model_eval_dir",
+            "model_analysis_temp": "docs_model_eval_dir",  # Treat temp variant the same
+            "final_report": "docs_reports_dir",
+            "final_report_executed": "docs_reports_dir"
         }
 
-        if args.notebook not in notebook_to_dir:
-            logger.warning(f"Notebook {args.notebook} not in known list: {list(notebook_to_dir.keys())}. Using default output directory.")
+        if notebook_base not in notebook_to_dir:
+            logger.warning(f"Notebook base {notebook_base} not in known list: {list(notebook_to_dir.keys())}. Using default output directory.")
             output_dir = "docs/default"
         else:
-            dir_key = notebook_to_dir[args.notebook]
+            dir_key = notebook_to_dir[notebook_base]
             output_dir = config.get(dir_key, "docs/default")
             logger.info(f"Using mapped output directory from config[{dir_key}]: {output_dir}")
 
@@ -93,32 +100,59 @@ def main() -> None:
             logger.error(f"fetch_id or stock_symbol missing in current_fetch", extra={"fetch_id": fetch_id or "N/A"})
             raise ValueError("fetch_id or stock_symbol missing in current_fetch")
 
-        # Use a clean base name for final report
-        base_name = "final_report" if "final_report" in args.notebook else os.path.splitext(args.notebook)[0]
-        output_md_file = os.path.join(PROJECT_ROOT, output_dir, f"{base_name}_{stock_symbol.lower()}_{fetch_id}.md")
-        output_pdf_file = os.path.join(PROJECT_ROOT, output_dir, f"{base_name}_{stock_symbol.lower()}_{fetch_id}.pdf")
+        # Use model ID timestamp for model_analysis variants, else use fetch_id
+        identifier = fetch_id.replace("fetch_", "")
+        if "model_analysis" in notebook_base:
+            current_models = config.get("current_models", {})
+            model_id = current_models.get("without_outliers") or current_models.get("with_outliers")
+            if model_id:
+                try:
+                    identifier = extract_timestamp(model_id)
+                    logger.info(f"Using model timestamp {identifier} for {args.notebook}")
+                except ValueError as e:
+                    logger.warning(f"Failed to extract timestamp from model_id {model_id}: {str(e)}. Falling back to fetch_id {identifier}.")
+            else:
+                logger.warning(f"No model_id found in current_models. Using fetch_id {identifier}.")
 
+        # Use a clean base name for final report
+        base_name = "final_report" if "final_report" in notebook_base else notebook_base
+        output_md_file = os.path.join(PROJECT_ROOT, output_dir, f"{base_name}_{stock_symbol.lower()}_{identifier}.md")
+        output_pdf_file = os.path.join(PROJECT_ROOT, output_dir, f"{base_name}_{stock_symbol.lower()}_{identifier}.pdf")
+
+        # Configure exporters to include outputs and filter by 'export' tag
         c = Config()
         c.MarkdownExporter.preprocessors = [TagFilterPreprocessor]
         c.WebPDFExporter.preprocessors = [TagFilterPreprocessor]
         c.MarkdownExporter.exclude_input = True
         c.WebPDFExporter.exclude_input = True
+        c.MarkdownExporter.exclude_output = False
+        c.WebPDFExporter.exclude_output = False
         c.MarkdownExporter.enable_math = False
         c.WebPDFExporter.enable_math = False
 
-        nb = load_notebook(os.path.join(PROJECT_ROOT, "notebooks", args.notebook))
+        # Load notebook
+        notebook_path = os.path.join(PROJECT_ROOT, "notebooks", args.notebook)
+        nb = load_notebook(notebook_path)
+
+        # Log cells with 'export' tag and their outputs
+        export_cells = [cell for cell in nb.cells if 'export' in cell.metadata.get('tags', [])]
+        cells_with_output = [cell for cell in export_cells if cell.get('outputs', [])]
+        logger.info(f"Found {len(export_cells)} cells with 'export' tag, {len(cells_with_output)} with outputs")
+
+        # Add dynamic date cell
         current_date = datetime.now().strftime("%B %d, %Y")
         date_cell = nbformat.v4.new_markdown_cell(f"**Date**: {current_date}")
         date_cell.metadata['tags'] = ['export']
         nb.cells.insert(0, date_cell)
 
+        # Export to Markdown and PDF
         export_markdown(nb, output_md_file, config=c)
         export_pdf(nb, output_pdf_file, config=c)
 
-        logger.info("Notebook export completed successfully", extra={"fetch_id": fetch_id})
+        logger.info("Notebook export completed successfully", extra={"identifier": identifier})
 
     except Exception as e:
-        logger.error(f"Script failed: {str(e)}", extra={"fetch_id": fetch_id if 'fetch_id' in locals() else "N/A"})
+        logger.error(f"Script failed: {str(e)}", extra={"identifier": identifier if 'identifier' in locals() else "N/A"})
         raise SystemExit(1)
 
 if __name__ == "__main__":
