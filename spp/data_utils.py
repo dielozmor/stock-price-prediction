@@ -10,15 +10,17 @@ from datetime import datetime
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 DEFAULT_CONFIG_PATH = os.getenv("STOCK_CONFIG_PATH", "config/config.json")
 
+
 def parse_arguments(
-    mandatory_args: Optional[List[str]] = None
+    mandatory_args: Optional[List[str]] = None,
+    optional_args: Optional[List[str]] = None
 ) -> argparse.Namespace:
     """Parse command-line arguments with enhanced error handling and scalability."""
     parser = argparse.ArgumentParser(description="Stock data or notebook export script")
     
     argument_configs = {
         "stock_symbol": {"type": str, "help": "Stock symbol (e.g., 'TSLA')"},
-        "fetch_id": {"type": str, "help": "Fetch ID for the data (e.g., 'fetch_20250617_093553')"},
+        "fetch_id": {"type": str, "help": "Fetch ID for the data (e.g., 'fetch_20250815_120700')"},
         "config": {"type": str, "default": "config/config.json", "help": "Path to configuration file"},
         "api_function": {"type": str, "default": "TIME_SERIES_DAILY", "help": "Alpha Vantage API function"},
         "days_back": {"type": int, "default": 365, "help": "Number of days back to fetch data"},
@@ -26,6 +28,7 @@ def parse_arguments(
         "step": {"type": str, "choices": ["clean", "feature"], "help": "Processing step: clean or feature"},
         "notebook": {"type": str, "help": "Name of the notebook to export (e.g., inspect_data.ipynb)"},
         "output_dir": {"type": str, "help": "Directory to save exported files (e.g., docs/data_evaluation)"},
+        "original_notebook": {"type": str, "help": "Original notebook name for output directory mapping (e.g., inspect_data.ipynb)"},
     }
         
     if mandatory_args:
@@ -33,9 +36,22 @@ def parse_arguments(
         if invalid_args:
             parser.error(f"Invalid mandatory arguments: {', '.join(invalid_args)}")
     
+    if optional_args:
+        invalid_args = [arg for arg in optional_args if arg not in argument_configs]
+        if invalid_args:
+            parser.error(f"Invalid optional arguments: {', '.join(invalid_args)}")
+    
     for arg, spec in argument_configs.items():
         if arg in (mandatory_args or []):
             parser.add_argument(f"--{arg}", type=spec["type"], required=True, help=spec["help"])
+        elif arg in (optional_args or []):
+            parser.add_argument(
+                f"--{arg}",
+                type=spec["type"],
+                default=None,
+                choices=spec.get("choices"),
+                help=spec["help"],
+            )
         else:
             parser.add_argument(
                 f"--{arg}",
