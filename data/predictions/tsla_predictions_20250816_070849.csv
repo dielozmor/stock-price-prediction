@@ -1,0 +1,3 @@
+future_date,predicted_next_close,model_variant,based_on_date,fetch_id,model_id,timestamp
+2025-06-17 00:00:00+00:00,329.8116572354499,with_outliers,2025-06-16 00:00:00+00:00,fetch_20250617_093553,model_tsla_20250815_170544_with_outliers,2025-08-16T07:08:49.401139
+2025-06-17 00:00:00+00:00,330.10336638888907,without_outliers,2025-06-16 00:00:00+00:00,fetch_20250617_093553,model_tsla_20250815_170544_without_outliers,2025-08-16T07:08:49.401139

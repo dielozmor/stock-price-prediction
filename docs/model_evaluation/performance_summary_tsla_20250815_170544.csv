@@ -1,0 +1,5 @@
+model_id,model_type,outlier_handling,R2,RMSE,MAE,Status
+model_tsla_20250813_102656_with_outliers,LinearRegression,with_outliers,0.7661391734832611,19.53968008554133,14.467506505724105,Good
+model_tsla_20250813_102656_without_outliers,LinearRegression,without_outliers,0.7845525332433119,19.163351585307108,14.299132819663765,Good
+model_tsla_20250815_170544_with_outliers,RandomForest,with_outliers,0.7719378136345533,19.295913808240606,14.161016273176823,Good
+model_tsla_20250815_170544_without_outliers,RandomForest,without_outliers,0.7795253905543396,19.385636389441245,14.067009925763134,Good

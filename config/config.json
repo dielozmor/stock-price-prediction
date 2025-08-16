@@ -15,8 +15,8 @@
         "processed_data_file": "data/processed/processed_tsla_fetch_20250617_093553.csv"
     },
     "current_models": {
-        "with_outliers": "model_tsla_20250813_102656_with_outliers",
-        "without_outliers": "model_tsla_20250813_102656_without_outliers"
+        "with_outliers": "model_tsla_20250815_170544_with_outliers",
+        "without_outliers": "model_tsla_20250815_170544_without_outliers"
     },
     "fetch_id": "initial_setup",
     "project_root": "/home/dielozmor/dev/projects/portfolio/stock-price-prediction",
@@ -29,5 +29,11 @@
     "gaps_dir": "data/intermediate",
     "outliers_dir": "data/outliers",
     "docs_data_eval_dir": "docs/data_evaluation",
-    "docs_model_eval_dir": "docs/model_evaluation"
+    "docs_model_eval_dir": "docs/model_evaluation",
+    "features": [
+        "prev_close",
+        "volume",
+        "ma5"
+    ],
+    "target": "next_close"
 }
