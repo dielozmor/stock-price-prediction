@@ -1,7 +1,7 @@
 # Stock Price Prediction Project
 
 **Authors**: Diego Lozano  
-**Last Updated**: August 13, 2025  
+**Last Updated**: August 15, 2025  
 
 ---
 
@@ -22,15 +22,15 @@
 
 ## Overview
 
-This project develops a dynamic pipeline to predict next-day closing stock prices using machine learning, with Tesla (TSLA) as the primary focus. Designed for flexibility, it supports any stock symbol via command-line arguments. Built with Python, it leverages linear regression models, machine learning techniques, and automation tools like cron, producing predictions and PDF reports. It serves as a robust demonstration of data science and DevOps skills.
+This project develops a dynamic pipeline to predict next-day closing stock prices using machine learning, with Tesla (TSLA) as the primary focus. Designed for flexibility, it supports any stock symbol via command-line arguments. Built with Python, it leverages Random Forest models, machine learning techniques, and automation tools like cron, producing predictions and PDF reports. It serves as a robust demonstration of data science and DevOps skills. Notifications for failures are handled via file-based alerts in `logs/alerts.txt`.
 
 ---
 
 ## Project Goals
 
-- Predict next-day closing stock prices using linear regression.  
+- Predict next-day closing stock prices using Random Forest.  
 - Support dynamic stock selection with TSLA as the initial stock.  
-- Build an automated pipeline for data retrieval, processing, modeling, prediction, and reporting.  
+- Build an automated pipeline for data retrieval, processing, modeling, prediction, performance monitoring, and reporting.  
 - Generate detailed evaluation reports (PDF) to assess model performance.
 
 ---
@@ -38,38 +38,40 @@ This project develops a dynamic pipeline to predict next-day closing stock price
 ## Data Source
 
 - **Source**: Alpha Vantage API (free tier, daily stock data).  
-- **Time Frame**: One year of daily data (e.g., August 13, 2024 - August 12, 2025 for TSLA, ~250 rows after holidays).  
+- **Time Frame**: One year of daily data (June 17, 2024–June 16, 2025 for TSLA, ~250 rows after holidays).  
   - *Note*: The time frame and stock can be adjusted via command-line arguments.  
-- **Features**: Previous day's closing price, daily trading volume, 5-day moving average.
+- **Features**: Previous day's closing price, daily trading volume, 5-day moving average (`prev_close`, `volume`, `ma5`).  
+- **Target**: Next day's closing price (`next_close`).
 
 ---
 
 ## Model
 
-- **Algorithm**: Linear regression, with two versions:  
-  - Including outliers (RMSE=19.54, MAE=14.47, R²=0.77).  
-  - Excluding outliers (RMSE=19.16, MAE=14.30, R²=0.78).  
-  - *Note*: Two versions are trained to assess the impact of outliers on prediction accuracy.  
-- **Output**: Models saved as `.pkl` files in `models/` with timestamped names.
-- **Prediction**: Use `scripts/predict.py` to make predictions with the trained models.
+- **Algorithm**: Random Forest Regressor, with two versions:  
+  - Including outliers (RMSE=19.30, MAE=14.16, R²=0.772).  
+  - Excluding outliers (RMSE=19.54, MAE=14.25, R²=0.776).  
+  - *Note*: Random Forest was chosen over Linear Regression (R² ~0.78) for better generalization and robustness to non-linear patterns and outliers in TSLA data.  
+  - Hyperparameters: `n_estimators=300`, `max_depth=20`, `min_samples_split=5`, `min_samples_leaf=2`, `random_state=42`.  
+- **Output**: Models saved as `.pkl` files in `models/` with timestamped names (e.g., `model_tsla_20250815_170544_with_outliers.pkl`).  
+- **Prediction**: Use `scripts/predict.py` to make predictions with the trained models.  
+- **Performance Monitoring**: `monitor_performance.py` tracks R², RMSE, and MAE, saving results to `docs/model_evaluation/performance_summary_tsla_TIMESTAMP.csv` and flagging degradation (R² < 0.75). Failure alerts are logged to `logs/alerts.txt`.
 
 ---
 
 ## Directory Structure
 
 - `config/`: Configuration file (`config.json`) for settings (auto-generated).  
-- `data/`: Raw (`raw/`), processed (`processed/`), intermediate (`intermediate/`), and outlier (`outliers/`) data.  
+- `data/`: Raw (`raw/`), processed (`processed/`), intermediate (`intermediate/`), outlier (`outliers/`) data and a Fetch history file (`fetch_history.jsonl`) for storing data fetches.  
 - `docs/`:  
   - `data_evaluation/`: Reports on data inspection (Markdown and PDF exports from notebooks).  
-  - `model_evaluation/`: Reports on model performance (Markdown and PDF exports from notebooks).  
-  - `reports/`: Final evaluation report (PDF only, summarizing data and model evaluation).  
-- `logs/`: Log files for debugging and tracking.  
+  - `model_evaluation/`: Reports on model performance, including `performance_summary_tsla_TIMESTAMP.csv`.  
+  - `reports/`: Final evaluation report (PDF only, e.g., `final_report_tsla_TIMESTAMP.pdf`).  
+- `logs/`: Log files for debugging and tracking (`pipeline.log`), and failure alerts (`alerts.txt`).  
 - `models/`: Trained models and history (`models_history.jsonl`).  
 - `notebooks/`: Data inspection (`inspect_data.ipynb`) and model analysis (`model_analysis.ipynb`).  
 - `plots/`: Visualizations from notebooks.  
-- `scripts/`: Core scripts (`initialize_config.py`, `fetch_data.py`, `process_data.py`, `model.py`, `export_notebook.py`, `combine_report.py`, `predict.py`).  
+- `scripts/`: Core scripts (`initialize_config.py`, `fetch_data.py`, `process_data.py`, `model.py`, `export_notebook.py`, `combine_report.py`, `predict.py`, `monitor_performance.py`).  
 - `spp/`: Utility modules (`data_utils.py`, `logging_utils.py`, `plot_utils.py`).  
-- *Note*: The `personal/` directory is for local use and not included in the GitHub repository.
 
 ---
 
@@ -130,7 +132,7 @@ Follow these steps to set up and run the stock price prediction project on your 
      ```bash  
      ./run_pipeline.sh TSLA  
      ```  
-   - **After running**, check `docs/reports/` for the final report (PDF only) and `plots/` for visualizations.
+   - **After running**, check `docs/reports/` for the final report (PDF only) and `plots/` for visualizations. Failure alerts are in `logs/alerts.txt`.
 
 ---
 
@@ -146,21 +148,45 @@ Follow these steps to set up and run the stock price prediction project on your 
   ```
 
 - **Run Individual Scripts**:  
+  - Initialize Configuration file:
+    ```bash
+    python scripts/initialize_config.py
+    ```
   - Fetch data:  
     ```bash  
     python scripts/fetch_data.py TSLA  
+    ```
+  -Inspect data:
+    (Automated by pipeline; for manual execution, use papermill with parameters from run_pipeline.sh or execute cells manually in inspect_data.ipynb) 
+  - Export inspect_data Notebook:
+    ``` bash
+    python scripts/export_notebook.py --notebook inspect_data.ipynb
     ```  
-  - Process data:  
+  - Clean data:  
     ```bash  
-    python scripts/process_data.py --step clean TSLA  
+    python scripts/process_data.py --step clean  
+    ```
+  - Add Features:
+    ```bash
+    python scripts/process_data.py --step feature
     ```  
   - Train models:  
     ```bash  
     python scripts/model.py TSLA  
-    ```  
+    ```
+  - Analyze models:
+    ```bash
+    papermill notebooks/model_analysis.ipynb
+    ```
+  - Export model_analysis notebook
+    (Automated by pipeline; for manual execution, use papermill with parameters from run_pipeline.sh or execute cells manually in model_analysis.ipynb)
   - Generate predictions:  
     ```bash  
     python scripts/predict.py TSLA  
+    ```  
+  - Monitor performance:  
+    ```bash  
+    python scripts/monitor_performance.py  
     ```  
   - Combine reports:  
     ```bash  
@@ -168,16 +194,18 @@ Follow these steps to set up and run the stock price prediction project on your 
     ```
 
 - **View Outputs**:  
-  - Predictions: `data/predictions/` (e.g., `TSLA_predictions_20250813.csv`)  
-  - Reports: `docs/reports/` (PDF only, e.g., `final_report_fetch_20250813_084101.pdf`)  
-  - Visualizations: `plots/` (e.g., `predictions_tsla_20250813_084114_with_outliers.png`)  
-  - Logs: `logs/pipeline.log`
+  - Predictions: `data/predictions/` (e.g., `tsla_predictions_20250816_070849.csv`)  
+  - Performance summaries: `docs/model_evaluation/` (e.g., `performance_summary_tsla_20250815_170544.csv`)  
+  - Reports: `docs/reports/` (PDF only, e.g., `final_report_tsla_20250815_170544.pdf`)  
+  - Visualizations: `plots/` (e.g., `tsla_model_20250815_170544_with_outliers_predictions.png`)  
+  - Logs: `logs/pipeline.log`, `train_model.log`, etc.
+  - Alerts: `logs/alerts.txt` (for failures)
 
 ---
 
 ## Automation
 
-The pipeline can be automated to run at regular intervals using cron (for Unix/Linux/MacOS) or Task Scheduler (for Windows). This is ideal for keeping models up-to-date with the latest stock data. For detailed steps, refer to [docs/automation.md](docs/automation.md).
+The pipeline can be automated to run at regular intervals using cron (for Unix/Linux/MacOS) or Task Scheduler (for Windows). This ensures iterative model updates with the latest stock data. For detailed steps, refer to [docs/automation.md](docs/automation.md).
 
 ---
 
